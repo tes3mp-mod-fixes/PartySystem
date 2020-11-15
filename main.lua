@@ -21,6 +21,7 @@ local function quickLog(msg)
 end
 
 local function setPlayerParty(name, value)
+    quickLog("setPlayerParty(" .. tostring(name) .. ", " .. tostring(value) .. ")")
     if value ~= nil then
         PartySystem.data.players[name] = tostring(value)
     else
@@ -30,8 +31,10 @@ end
 
 local function getPlayerParty(name)
     local partyId = PartySystem.data.players[name]
-    if partyId ~= nil then
+    quickLog("getPlayerParty(" .. tostring(name) .. ") =" .. tostring(partyId))
+        if partyId ~= nil then
         return tostring(partyId)
+
     end
     return nil
 end
@@ -50,7 +53,7 @@ end
 
 function PartySystem.removeLonelyParty(partyId)
     local party = PartySystem.data.parties[partyId]
-    if party ~= nill and #party.members == 1 and #invites[partyId] == 0 then
+    if party ~= nil and #party.members == 1 and #invites[partyId] == 0 then
         setPlayerParty(party.members[1], nil)
         PartySystem.data.parties[partyId] = nil
         invites[partyId] = nil
@@ -58,8 +61,8 @@ function PartySystem.removeLonelyParty(partyId)
 end
 
 function PartySystem.createParty(pid)
-    if Players[pid] ~=nil and Players[pid]:IsLoggedIn() then
-        leaderpid = tonumber(pid)
+    if Players[pid] ~= nil and Players[pid]:IsLoggedIn() then
+        pid = tonumber(pid)
 
         -- if this player is already in a party, just return that pid
         local partyId = PartySystem.getPartyId(pid)
@@ -67,11 +70,13 @@ function PartySystem.createParty(pid)
             return partyId
         end
         
-        partyId = tostring(#PartySystem.data.parties)
+        partyId = tostring( #PartySystem.data.parties )
 
         local name = Players[pid].name
         local defaultPartyName = name .. "'s party"
         
+        quickLog(defaultPartyName .. " partyId: " .. tostring(partyId))
+
         PartySystem.data.parties[partyId] = {
             name = defaultPartyName,
             id = partyId,
