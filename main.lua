@@ -24,12 +24,16 @@ local function setPlayerParty(name, value)
     if value ~= nil then
         PartySystem.data.players[name] = tostring(value)
     else
-        PartySystem.data.players[name] = value
+        PartySystem.data.players[name] = nil
     end
 end
 
 local function getPlayerParty(name)
-    return tostring(PartySystem.data.players[name])
+    local partyId = PartySystem.data.players[name]
+    if partyId ~= nil then
+        return tostring(partyId)
+    end
+    return nil
 end
 
 function PartySystem.loadData()
