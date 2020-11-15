@@ -65,6 +65,9 @@ function PartySystem.CopyJournalToParty(pid)
 end
 
 function PartySystem.OnPlayerJournalValidator(eventstatus, pid)
+    if config.shareJournal then
+        return
+    end
     return customEventHooks.makeEventStatus(false, true)
 end
 

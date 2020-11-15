@@ -34,6 +34,9 @@ function PartySystem.CopyTopicsToParty(pid)
 end
 
 function PartySystem.OnPlayerTopicValidator(eventStatus,pid)
+    if config.shareTopics then
+        return
+    end
   return customEventHooks.makeEventStatus(false,true)
 end
 function PartySystem.OnPlayerTopicHandler(eventStatus,pid)
