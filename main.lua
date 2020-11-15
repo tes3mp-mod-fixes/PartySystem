@@ -75,7 +75,7 @@ function PartySystem.createParty(pid)
             members = {name}
         }
         setPlayerParty(name, partyId)
-        tes3mp.SendMessage(pid, color.Default .. "Party " .. party.name .. " has been created.\n", false)
+        tes3mp.SendMessage(pid, color.Default .. "Party has been created.\n", false)
         return partyId
     end
     return nil
