@@ -14,6 +14,7 @@ PartySystem.defaultData = {
 }
 
 local invites = {}
+local GetChatName = logicHandler.GetChatName
 
 local function quickLog(msg)
     tes3mp.LogMessage(enumerations.log.INFO, msg)
@@ -74,6 +75,7 @@ function PartySystem.createParty(pid)
             members = {name}
         }
         setPlayerParty(name, partyId)
+        tes3mp.SendMessage(pid, color.Default .. "Party " .. party.name .. " has been created.\n", false)
         return partyId
     end
     return nil
@@ -201,12 +203,6 @@ function PartySystem.removeMember(partyId, pid)
                 table.remove(party.members, memberIndex)
                 setPlayerParty(name, nil)
 
-                if #party.members == 0 then
-                    PartySystem.data.parties[partyId] = nil
-                    invites[partyId] = nil
-                    return
-                end
-
                 if PartySystem.config.allowNamedParties then
                     tes3mp.SendMessage(pid, color.Default .. "You've been removed from " .. party.name .. ".\n", false)
                     PartySystem.messageParty(partyId, color.Default .. tostring(name) .. " has left " .. party.name .. ".")
@@ -215,14 +211,15 @@ function PartySystem.removeMember(partyId, pid)
                     PartySystem.messageParty(partyId, color.Default .. tostring(name) .. " has left the party.")
                 end
 
-                if party.leader == name then
+                if #party.members == 0 then
+                    PartySystem.data.parties[partyId] = nil
+                    invites[partyId] = nil
+                elseif party.leader == name then
                     party.leader = party.members[1]
                 end
 
-                return
             end
         end
-        --quickLog("Attempt to removed " .. tostring(name) .. " from party " .. tostring(partyId) .. " failed")
     end
 end
 
@@ -272,12 +269,16 @@ end
 function PartySystem.OnServerPostInitHandler()
     PartySystem.loadData()
     PartySystem.saveData()
-    local GetChatName = logicHandler.GetChatName
     logicHandler.GetChatName = function(pid)
         if Players[pid] ~= nil  and PartySystem.config.showPartyNameInChat and PartySystem.config.allowNamedParties then
             local partyId = PartySystem.getPartyId(pid)
             if partyId ~= nil then
-                return color.Gray .. "-" .. PartySystem.data.parties[partyId].name .. "- " .. color.Default .. GetChatName(pid)
+                local party = PartySystem.data.parties[partyId]
+                local partyTag = party.name
+                if party.leader == Players[pid].name then
+                    partyTag = "★" .. partyTag
+                end
+                return color.Gray .. partyTag .. color.Default .. GetChatName(pid)
             end
         end
         return GetChatName(pid)
