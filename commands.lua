@@ -41,4 +41,4 @@ local function mainCommand(pid, cmd)
 
 end
 
-customCommandHooks.registerCommange("party", mainCommand)
+customCommandHooks.registerCommand("party", mainCommand)
