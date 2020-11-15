@@ -98,6 +98,8 @@ local function OnGuiAction(eventStatus, pid, menuId, data)
         local invitee = Players[leaderpid].data.customVariables.partyInvitee
         local partyId = PartySystem.getPartyId(pid)
         if partyId ~= nil and invitee ~= nil then
+            local party = PartySystem.data.parties[partyId]
+            party.name = data
             Players[leaderpid].data.customVariables.partyInvitee = nil
             PartySystem.inviteMember(partyId, invitee, pid)
         end
