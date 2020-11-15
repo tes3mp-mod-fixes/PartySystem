@@ -18,7 +18,7 @@ function PartySystem.__setup_party__(leaderpid, pid)
         Players[leaderpid].data.customVariables.partyInvitee = pid
         tes3mp.InputDialog(leaderpid, PartySystem.config.partyNameMenuId, "Name your party", "")
     else
-        PartySystem.inviteMember(partyId, pid, leaderpid)
+        PartySystem.inviteMember(partyId, pid, Players[leaderpid].name)
     end
 end
 
@@ -57,7 +57,7 @@ local function onPlayerActivateHandler(eventStatus, me, them,menu, cellDescripti
                 end
             else
                 -- They are not in a party but I am
-                if PartySystem.isInvited(myPartyId, them) then
+                if iAmLeader and PartySystem.isInvited(myPartyId, them) then
                     -- I've already invited them
                     partyButton.caption = "Cancel invite to party"
                     partyButton.destinations = {menuHelper.destinations.setDefault(nil, {menuHelper.effects
@@ -101,7 +101,7 @@ local function OnGuiAction(eventStatus, pid, menuId, data)
             local party = PartySystem.data.parties[partyId]
             party.name = data
             Players[leaderpid].data.customVariables.partyInvitee = nil
-            PartySystem.inviteMember(partyId, invitee, pid)
+            PartySystem.inviteMember(partyId, invitee, Players[pid].name)
         end
     end
 end
