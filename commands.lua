@@ -1,3 +1,5 @@
+local GetChatName = logicHandler.GetChatName
+
 local function ERROR(pid, message)
     tes3mp.SendMessage(pid, color.Red .. message .. "\n")
 end
@@ -26,7 +28,8 @@ local function invite(pid, other)
     if test(partyId ~= nil, pid, "You're not in a party.") and
         test(other ~= nil, pid, "Expected the pid of the person you want to invite.") then
         other = tonumber(other)
-        PartySystem.inviteMember(partyId, other, pid)
+        PartySystem.inviteMember(partyId, other, GetChatName(pid))
+        tes3mp.SendMessage(pid, color.Default .. "Invite sent.\n")
     end
 end
 
