@@ -260,7 +260,7 @@ function PartySystem.messageParty(partyId, message, fromPid)
     end
     for _, member in pairs(party.members) do
         local player = logicHandler.GetPlayerByName(member)
-        if player ~= nil and player:IsLoggedIn() and player.pid ~= fromPid then
+        if player ~= nil and player:IsLoggedIn() then
             tes3mp.SendMessage(player.pid, msg .. "\n", false)
         end
     end
