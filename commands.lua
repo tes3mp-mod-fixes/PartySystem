@@ -29,12 +29,36 @@ local function invite(pid, other)
     end
 end
 
+local function uninvite(pid, other)
+    local partyId = PartySystem.getPartyId(pid)
+    if test(partyId ~= nil, pid, "You're not in a party.") and
+        test(other ~= nil, pid, "Expected the pid of the person you want to uninvite.") and
+        test(PartySystem.isPartyLeader(partyId, pid), pid, "Only the leader can uninvite.") then
+        other = tonumber(other)
+        PartySystem.removeInvite(partyId, other)
+    end
+end
+
+local function kick(pid, other)
+    local partyId = PartySystem.getPartyId(pid)
+    if test(partyId ~= nil, pid, "You're not in a party.") and
+        test(other ~= nil, pid, "Expected the pid of the person you want to kick.") and
+        test(PartySystem.isPartyLeader(partyId, pid), pid, "Only the leader can kick.")  then
+        other = tonumber(other)
+        PartySystem.removeMember(partyId, other)
+    end
+end
+
 local function mainCommand(pid, cmd)
 
-    if cmd[2] == "create" then
+    if cmd[2] == "create" or cmd[2] == "c" then
         create(pid, cmd[3])
-    elseif cmd[2] == "invite" then
+    elseif cmd[2] == "invite" or cmd[2] == "i" then
         invite(pid, cmd[3])
+    elseif cmd[2] == "uninvite" or cmd[2] == "u" then
+        uninvite(pid, cmd[3])
+    elseif cmd[2] == "kick" or cmd[2] == "k" then
+        kick(pid, cmd[3])
     else
         -- TODO print list of commands and descriptions
     end
