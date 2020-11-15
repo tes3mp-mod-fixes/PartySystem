@@ -16,14 +16,16 @@ PartySystem.defaultData = {
 local invites = {}
 local GetChatName = logicHandler.GetChatName
 
-local function quickLog(msg)
-    tes3mp.LogMessage(enumerations.log.INFO, msg)
+function PartySystem.log(msg)
+    if PartySystem.confg.debug then
+        tes3mp.LogMessage(enumerations.log.INFO, msg)
+    end
 end
 
 local function setPlayerParty(name, value)
-    quickLog("setPlayerParty(" .. tostring(name) .. ", " .. tostring(value) .. ")")
+    PartySystem.log("setPlayerParty(" .. tostring(name) .. ", " .. tostring(value) .. ")")
     if value ~= nil then
-        PartySystem.data.players[name] = tostring(value)
+        PartySystem.data.players[name] = tonumber(value)
     else
         PartySystem.data.players[name] = nil
     end
@@ -31,9 +33,9 @@ end
 
 local function getPlayerParty(name)
     local partyId = PartySystem.data.players[name]
-    quickLog("getPlayerParty(" .. tostring(name) .. ") =" .. tostring(partyId))
+    PartySystem.log("getPlayerParty(" .. tostring(name) .. ") =" .. tostring(partyId))
         if partyId ~= nil then
-        return tostring(partyId)
+        return tonumber(partyId)
 
     end
     return nil
@@ -52,6 +54,7 @@ function PartySystem.partyExists(partyId)
 end
 
 function PartySystem.removeLonelyParty(partyId)
+    partyId = tonumber(partyId)
     local party = PartySystem.data.parties[partyId]
     if party ~= nil and #party.members == 1 and #invites[partyId] == 0 then
         setPlayerParty(party.members[1], nil)
@@ -69,22 +72,25 @@ function PartySystem.createParty(pid)
         if partyId ~= nil then
             return partyId
         end
-        
-        partyId = tostring( #PartySystem.data.parties )
 
         local name = Players[pid].name
         local defaultPartyName = name .. "'s party"
-        
-        quickLog(defaultPartyName .. " partyId: " .. tostring(partyId))
 
-        PartySystem.data.parties[partyId] = {
+        local party = {
             name = defaultPartyName,
-            id = partyId,
+            id = nil,
             leader = name,
             members = {name}
         }
+        table.insert(PartySystem.data.parties, party)
+        partyId = #PartySystem.data.parties
+        party.id = partyId
         setPlayerParty(name, partyId)
+        
+        PartySystem.log("createParty " .. defaultPartyName .. " partyId: " .. tostring(partyId))
+        tableHelper.print(PartySystem.data.parties)
         tes3mp.SendMessage(pid, color.Default .. "Party has been created.\n", false)
+
         return partyId
     end
     return nil
@@ -92,6 +98,7 @@ end
 
 function PartySystem.addMember(partyId, pid)
     pid = tonumber(pid)
+    partyId = tonumber(partyId)
     if Players[pid] ~= nil and Players[pid]:IsLoggedIn() then
         local name = Players[pid].name
         local party = PartySystem.data.parties[partyId]
@@ -115,12 +122,13 @@ function PartySystem.addMember(partyId, pid)
 
             return
         end
-        --quickLog("Attempt to add " .. tostring(name) .. " to party " .. tostring(partyId) .. " failed")
+        PartySystem.log("Attempt to add " .. tostring(name) .. " to party " .. tostring(partyId) .. " failed")
     end
 end
 
 function PartySystem.isInvited(partyId, pid)
     pid = tonumber(pid)
+    partyId = tonumber(partyId)
     if Players[pid] == nil or Players[pid]:IsLoggedIn() == false then
         return false 
     end
@@ -131,6 +139,7 @@ end
 
 function PartySystem.inviteMember(partyId, pid, inviter)
     pid = tonumber(pid)
+    partyId = tonumber(partyId)
     if Players[pid] ~= nil and Players[pid]:IsLoggedIn() then
         local name = Players[pid].name
         local party = PartySystem.data.parties[partyId]
@@ -155,7 +164,7 @@ function PartySystem.inviteMember(partyId, pid, inviter)
             end
             return
         end
-    --quickLog("Attempt to invite " .. tostring(name) .. " to party " .. tostring(partyId) .. " failed")
+        PartySystem.log("Attempt to invite " .. tostring(name) .. " to party " .. tostring(partyId) .. " failed")
     end
 end
 
@@ -165,6 +174,7 @@ end
 
 function PartySystem.removeInvite(partyId, pid)
     pid = tonumber(pid)
+    partyId = tonumber(partyId)
     if Players[pid] ~= nil and Players[pid]:IsLoggedIn() then
         local name = Players[pid].name
         local party = PartySystem.data.parties[partyId]
@@ -172,12 +182,13 @@ function PartySystem.removeInvite(partyId, pid)
             invites[partyId][name] = nil
             return
         end
-        --quickLog("Attempt to remove invite of " .. tostring(name) .. " from party " .. tostring(partyId) .. " failed")
+        PartySystem.log("Attempt to remove invite of " .. tostring(name) .. " from party " .. tostring(partyId) .. " failed")
     end
 end
 
 function PartySystem.acceptInvite(partyId, pid)
     pid = tonumber(pid)
+    partyId = tonumber(partyId)
     local name = Players[pid].name
     local party = PartySystem.data.parties[partyId]
     if party ~= nil and PartySystem.isInvited(partyId, pid) then
@@ -190,11 +201,12 @@ function PartySystem.acceptInvite(partyId, pid)
         return
     end
     tes3mp.SendMessage(pid, color.Red .. "Unable to join party.\n", false)
-    --quickLog("Attempt for " .. tostring(name) .. " to accept party " .. tostring(partyId) .. " invite failed")
+    PartySystem.log("Attempt for " .. tostring(name) .. " to accept party " .. tostring(partyId) .. " invite failed")
 end
 
 function PartySystem.removeMember(partyId, pid)
     pid = tonumber(pid)
+    partyId = tonumber(partyId)
     if Players[pid] ~= nil and Players[pid]:IsLoggedIn() then
         local name = Players[pid].name
         local party = PartySystem.data.parties[partyId]
@@ -234,15 +246,16 @@ end
 
 function PartySystem.getPartyId(pid)
     pid = tonumber(pid)
-    local name = Players[pid].name
-    local partyId = getPlayerParty(name)
+    if Players[pid] ~= nil and Players[pid]:IsLoggedIn() then
+        local name = Players[pid].name
+        local partyId = getPlayerParty(name)
 
-    --tableHelper.print(PartySystem.data)
-    if partyId ~= nil and PartySystem.data.parties[partyId] ~= nil and
-        tableHelper.containsValue(PartySystem.data.parties[partyId].members, name) then
-        return partyId
+        --tableHelper.print(PartySystem.data)
+        if partyId ~= nil and PartySystem.data.parties[partyId] ~= nil and
+            tableHelper.containsValue(PartySystem.data.parties[partyId].members, name) then
+            return partyId
+        end
     end
-    setPlayerParty(name, nil)
     return nil
 end
 
@@ -279,15 +292,15 @@ function PartySystem.OnServerPostInitHandler()
     PartySystem.loadData()
     PartySystem.saveData()
     logicHandler.GetChatName = function(pid)
-        if Players[pid] ~= nil  and PartySystem.config.showPartyNameInChat and PartySystem.config.allowNamedParties then
+        if PartySystem.config.allowNamedParties and PartySystem.config.showPartyNameInChat and Players[pid] ~= nil then
             local partyId = PartySystem.getPartyId(pid)
             if partyId ~= nil then
                 local party = PartySystem.data.parties[partyId]
                 local partyTag = party.name
                 if party.leader == Players[pid].name then
-                    partyTag = "★" .. partyTag
+                    partyTag = "*" .. partyTag
                 end
-                return color.Gray .. partyTag .. color.Default .. GetChatName(pid)
+                return color.Gray .. partyTag .. " " .. color.Default .. GetChatName(pid)
             end
         end
         return GetChatName(pid)
@@ -312,5 +325,7 @@ require("custom.PartySystem.commands")
 require("custom.PartySystem.sharedData.journal")
 require("custom.PartySystem.sharedData.topic")
 require("custom.PartySystem.extensions.onPlayerActivate")
+
+tes3mp.LogMessage(enumerations.log.INFO, "PartySystem is ready")
 
 return PartySystem
