@@ -248,7 +248,7 @@ function PartySystem.removeMember(partyId, pid)
                     PartySystem.data.parties[partyId] = nil
                     invites[partyId] = nil
                 elseif party.leader == name then
-                    party.leader = party.members[1]
+                    PartySystem.changeLeader(partyId, party.members[1])
                 end
 
             end
@@ -278,8 +278,19 @@ function PartySystem.isPartyLeader(partyId, pid)
     if party ~= nil then
         return party.leader == name
     end
-
     return false
+end
+
+function PartySystem.changeLeader(partyId,name)
+    name = tostring(name)
+    local party = PartySystem.data.parties[partyId]
+    if party ~= nil then
+        party.leader = name
+        local eventStatus = customEventHooks.triggerValidators("OnPartyLeaderChange",{partyId,name})
+        customEventHooks.triggerHandlers("OnPartyLeaderChange",eventStatus,{partyId,name})
+    else
+        PartySystem.log("Unable to change party leader of a non-existing party")
+    end
 end
 
 function PartySystem.messageParty(partyId, message, fromPid)
