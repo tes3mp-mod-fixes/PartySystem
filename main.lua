@@ -14,7 +14,6 @@ PartySystem.defaultData = {
 }
 
 local invites = {}
-local partySetup = {}
 
 local function quickLog(msg)
     tes3mp.LogMessage(enumerations.log.INFO, msg)
@@ -202,7 +201,11 @@ function PartySystem.removeMember(partyId, pid)
                 table.remove(party.members, memberIndex)
                 setPlayerParty(name, nil)
 
-
+                if #party.members == 0 then
+                    PartySystem.data.parties[partyId] = nil
+                    invites[partyId] = nil
+                    return
+                end
 
                 if PartySystem.config.allowNamedParties then
                     tes3mp.SendMessage(pid, color.Default .. "You've been removed from " .. party.name .. ".\n", false)
@@ -250,7 +253,7 @@ end
 
 function PartySystem.messageParty(partyId, message, fromPid)
     local party = PartySystem.data.parties[partyId]
-    if party == nil or #party.members == 0 then
+    if party == nil then
         return
     end
 
