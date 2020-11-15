@@ -14,20 +14,9 @@ PartySystem.defaultData = {
 }
 
 local invites = {}
-local partySetup = {}
 
 local function quickLog(msg)
     tes3mp.LogMessage(enumerations.log.INFO, msg)
-end
-
-local function hideButton(button)
-    button.displayConditions = {{
-        conditionType = "hidden"
-    }}
-end
-
-local function showButton(button)
-    button.displayConditions = nil
 end
 
 local function setPlayerParty(name, value)
@@ -54,44 +43,40 @@ function PartySystem.partyExists(partyId)
     return partyId ~= nil and PartySystem.data.parties[partyId] ~= nil
 end
 
-function PartySystem.setupParty(leaderpid, pid)
-    leaderpid = tonumber(leaderpid)
-    partySetup[leaderpid] = {
-        invitee = tonumber(pid),
-        name = nil
-    }
-    if PartySystem.config.allowNamedParties then
-        --quickLog("PID BEING USED BY INPUT DIALOG: " .. tostring(leaderpid))
-        tes3mp.InputDialog(leaderpid, PartySystem.config.partyNameMenuId, "Name your party", Players[leaderpid].name .. "'s party.'")
-    else
-        PartySystem.createParty(leaderpid)
+function PartySystem.removeLonelyParty(partyId)
+    local party = PartySystem.data.parties[partyId]
+    if party ~= nill and #party.members == 1 and #invites[partyId] == 0 then
+        setPlayerParty(party.members[1], nil)
+        PartySystem.data.parties[partyId] = nil
+        invites[partyId] = nil
     end
 end
 
-function PartySystem.createParty(leaderpid)
-    if Players[leaderpid] ~=nil and Players[leaderpid]:IsLoggedIn() then
-        leaderpid = tonumber(leaderpid)
-        local pid = partySetup[leaderpid].invitee
-        local partyName = partySetup[leaderpid].name
+function PartySystem.createParty(pid)
+    if Players[pid] ~=nil and Players[pid]:IsLoggedIn() then
+        leaderpid = tonumber(pid)
 
-        local name = Players[leaderpid].name
-        if partyName == nil then
-            partyName = name .. "'s party"
+        -- if this player is already in a party, just return that pid
+        local partyId = PartySystem.getPartyId(pid)
+        if partyId ~= nil then
+            return partyId
         end
-        local partyId = tostring(#PartySystem.data.parties)
+        
+        partyId = tostring(#PartySystem.data.parties)
+
+        local name = Players[pid].name
+        local defaultPartyName = name .. "'s party"
+        
         PartySystem.data.parties[partyId] = {
-            name = partyName,
+            name = defaultPartyName,
             id = partyId,
             leader = name,
             members = {name}
         }
-        invites[partyId] = {}
-
         setPlayerParty(name, partyId)
-        PartySystem.inviteMember(partyId, pid, name)
-        partySetup[leaderpid] = nil
         return partyId
     end
+    return nil
 end
 
 function PartySystem.addMember(partyId, pid)
@@ -174,11 +159,6 @@ function PartySystem.removeInvite(partyId, pid)
         local party = PartySystem.data.parties[partyId]
         if party ~= nil and PartySystem.isInvited(partyId, pid) then
             invites[partyId][name] = nil
-            if #party.members == 1 and #invites[partyId] == 0 then
-                setPlayerParty(party.members[1], nil)
-                PartySystem.data.parties[partyId] = nil
-                invites[partyId] = nil
-            end
             return
         end
         --quickLog("Attempt to remove invite of " .. tostring(name) .. " from party " .. tostring(partyId) .. " failed")
@@ -220,6 +200,13 @@ function PartySystem.removeMember(partyId, pid)
             if memberIndex ~= nil then
                 table.remove(party.members, memberIndex)
                 setPlayerParty(name, nil)
+
+                if #party.members == 0 then
+                    PartySystem.data.parties[partyId] = nil
+                    invites[partyId] = nil
+                    return
+                end
+
                 if PartySystem.config.allowNamedParties then
                     tes3mp.SendMessage(pid, color.Default .. "You've been removed from " .. party.name .. ".\n", false)
                     PartySystem.messageParty(partyId, color.Default .. tostring(name) .. " has left " .. party.name .. ".")
@@ -228,10 +215,7 @@ function PartySystem.removeMember(partyId, pid)
                     PartySystem.messageParty(partyId, color.Default .. tostring(name) .. " has left the party.")
                 end
 
-                if #party.members == 1 and #invites[partyId] == 0 then
-                    setPlayerParty(party.members[1], nil)
-                    PartySystem.data.parties[partyId] = nil
-                elseif party.leader == name then
+                if party.leader == name then
                     party.leader = party.members[1]
                 end
 
@@ -285,77 +269,6 @@ function PartySystem.messageParty(partyId, message, fromPid)
     end
 end
 
-function PartySystem.onPlayerActivateHandler(eventStatus, me, them,menu, cellDescription)
-    if eventStatus.validDefaultHandler then
-        local partyButton = {
-            caption = "Party",
-            destinations = nil
-        }
-        table.insert(menu.buttons, 1, partyButton)
-        local myPartyId = PartySystem.getPartyId(me)
-        local myName = Players[me].name
-        local iAmLeader = PartySystem.isPartyLeader(myPartyId, me)
-        local theirPartyId = PartySystem.getPartyId(them)
-
-        showButton(partyButton)
-
-        if myPartyId ~= nil then
-            -- I'm in a party
-            if theirPartyId ~= nil then
-                -- They are also in a party
-                if myPartyId == theirPartyId then
-                    -- We're in the same party
-                    if iAmLeader then
-                        partyButton.caption = "Kick from party"
-                        partyButton.destinations = {menuHelper.destinations.setDefault(nil, {menuHelper.effects
-                            .runGlobalFunction("PartySystem", "removeMember", {myPartyId, them})})}
-                    else
-                        partyButton.caption = "Leave Party"
-                        partyButton.destinations = {menuHelper.destinations.setDefault(nil, {menuHelper.effects
-                            .runGlobalFunction("PartySystem", "removeMember", {myPartyId, me})})}
-                    end
-                else
-                    -- We're in different parties
-                    hideButton(partyButton)
-                end
-            else
-                -- They are not in a party but I am
-                if PartySystem.isInvited(myPartyId, them) then
-                    -- I've already invited them
-                    partyButton.caption = "Cancel invite to party"
-                    partyButton.destinations = {menuHelper.destinations.setDefault(nil, {menuHelper.effects
-                        .runGlobalFunction("PartySystem", "removeInvite", {myPartyId, them})})}
-                else
-                    partyButton.caption = "Invite to party"
-                    partyButton.destinations = {menuHelper.destinations.setDefault(nil, {menuHelper.effects
-                        .runGlobalFunction("PartySystem", "inviteMember", {myPartyId, them, myName})})}
-                end
-            end
-        else
-            -- I am not in a party
-
-            if theirPartyId ~= nil then
-                -- they are in a party but I am not
-
-                if PartySystem.isInvited(theirPartyId, me) then
-                    partyButton.caption = "Accept invite to party"
-                    partyButton.destinations = {menuHelper.destinations.setDefault(nil, {menuHelper.effects
-                        .runGlobalFunction("PartySystem", "acceptInvite", {theirPartyId, me})})}
-                else
-                    hideButton(partyButton)
-                end
-
-            else
-                -- We're both not in a party
-                partyButton.caption = "Invite to party"
-                partyButton.destinations = {menuHelper.destinations.setDefault(nil, {menuHelper.effects
-                    .runGlobalFunction("PartySystem", "setupParty", {me, them})})}
-
-            end
-        end
-    end
-end
-
 function PartySystem.OnServerPostInitHandler()
     PartySystem.loadData()
     PartySystem.saveData()
@@ -381,21 +294,13 @@ function PartySystem.OnServerExitHandler()
     PartySystem.saveData()
 end
 
-function PartySystem.OnGuiAction(eventStatus, pid, menuId, data)
-    if eventStatus.validDefaultHandler and menuId == PartySystem.config.partyNameMenuId then
-        --quickLog(tostring(Menus[menuId] == nil))
-        if partySetup[pid] ~= nil then
-            partySetup[pid].name = data
-            PartySystem.createParty(pid)
-        end
-    end
-end
 
-
-customEventHooks.registerHandler("OnPlayerActivate", PartySystem.onPlayerActivateHandler)
 customEventHooks.registerHandler("OnServerPostInit", PartySystem.OnServerPostInitHandler)
-customEventHooks.registerHandler("OnGUIAction", PartySystem.OnGuiAction)
 customEventHooks.registerHandler("OnServerExit", PartySystem.OnServerExitHandler)
-require("custom.PartySystem.journal")
-require("custom.PartySystem.topic")
+
+require("custom.PartySystem.commands")
+require("custom.PartySystem.sharedData.journal")
+require("custom.PartySystem.sharedData.topic")
+require("custom.PartySystem.extensions.onPlayerActivate")
+
 return PartySystem
