@@ -1,3 +1,5 @@
+local GetChatName = logicHandler.GetChatName
+
 local function hideButton(button)
     button.displayConditions = {{
         conditionType = "hidden"
@@ -18,7 +20,7 @@ function PartySystem.__setup_party__(leaderpid, pid)
         Players[leaderpid].data.customVariables.partyInvitee = pid
         tes3mp.InputDialog(leaderpid, PartySystem.config.partyNameMenuId, "Name your party", "")
     else
-        PartySystem.inviteMember(partyId, pid, Players[leaderpid].name)
+        PartySystem.inviteMember(partyId, pid, GetChatName(pid))
     end
 end
 
@@ -101,7 +103,7 @@ local function OnGuiAction(eventStatus, pid, menuId, data)
             local party = PartySystem.data.parties[partyId]
             party.name = data
             Players[leaderpid].data.customVariables.partyInvitee = nil
-            PartySystem.inviteMember(partyId, invitee, Players[pid].name)
+            PartySystem.inviteMember(partyId, invitee, GetChatName(pid))
         end
     end
 end
