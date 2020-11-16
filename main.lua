@@ -17,7 +17,7 @@ local invites = {}
 local GetChatName = logicHandler.GetChatName
 
 function PartySystem.log(msg)
-    if PartySystem.confg.debug then
+    if PartySystem.config.debug then
         tes3mp.LogMessage(enumerations.log.INFO, msg)
     end
 end
