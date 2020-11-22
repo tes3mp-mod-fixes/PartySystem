@@ -323,10 +323,12 @@ function PartySystem.isPartyDead(partyId)
     local result = true
     for _, member in PartySystem.getMembers(partyId) do
         local player = logicHandler.GetPlayerByName(member)
-        local health = tes3mp.GetHealthCurrent(player.pid)
-        if health >= 1 then
-            result = false
-            break
+        if player and player:IsLoggedIn() then
+            local health = tes3mp.GetHealthCurrent(player.pid)
+            if health >= 1 then
+                result = false
+                break
+            end
         end
     end
     return result
