@@ -311,6 +311,27 @@ function PartySystem.messageParty(partyId, message, fromPid)
     end
 end
 
+function PartySystem.getMembers(partyId)
+    local party = PartySystem.data.parties[partyId]
+    if party == nil then
+        return pairs({})
+    end
+    return pairs(party.members)
+end
+
+function PartySystem.isPartyDead(partyId)
+    local result = true
+    for _, member in PartySystem.getMembers(partyId) do
+        local player = logicHandler.GetPlayerByName(member)
+        local health = tes3mp.GetHealthCurrent(player.pid)
+        if health >= 1 then
+            result = false
+            break
+        end
+    end
+    return result
+end
+
 function PartySystem.OnServerPostInitHandler()
     PartySystem.loadData()
     PartySystem.saveData()
@@ -340,9 +361,20 @@ function PartySystem.OnServerExitHandler()
     PartySystem.saveData()
 end
 
+function PartySystem.OnPlayerDeathHandler(eventStatus, pid)
+    if eventStatus.validCustomHandlers then
+        local partyId = PartySystem.getPartyId(pid)
+        if partyId and PartySystem.isPartyDead(partyId) then
+            local eventStatus = customEventHooks.triggerValidators("OnPartyDeath", {partyId})
+            customEventHooks.triggerHandlers("OnPartyDeath", eventStatus, {partyId})
+        end
+    end
+end
+
 
 customEventHooks.registerHandler("OnServerPostInit", PartySystem.OnServerPostInitHandler)
 customEventHooks.registerHandler("OnServerExit", PartySystem.OnServerExitHandler)
+customEventHooks.registerHandler("OnPlayerDeath", PartySystem.OnPlayerDeathHandler)
 
 require("custom.PartySystem.commands")
 require("custom.PartySystem.sharedData.journal")
