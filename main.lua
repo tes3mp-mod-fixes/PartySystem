@@ -1,6 +1,5 @@
 -- basic setup
---PlayerActivationApi = require("custom.playerActivateAPI")
-
+-- PlayerActivationApi = require("custom.playerActivateAPI")
 PartySystem = {}
 PartySystem.scriptName = "PartySystem"
 PartySystem.defaultConfig = require("custom.PartySystem.defaultConfig")
@@ -34,7 +33,7 @@ end
 local function getPlayerParty(name)
     local partyId = PartySystem.data.players[name]
     PartySystem.log("getPlayerParty(" .. tostring(name) .. ") =" .. tostring(partyId))
-        if partyId ~= nil then
+    if partyId ~= nil then
         return tonumber(partyId)
 
     end
@@ -86,12 +85,12 @@ function PartySystem.createParty(pid)
         partyId = #PartySystem.data.parties
         party.id = partyId
         setPlayerParty(name, partyId)
-        
+
         PartySystem.log("createParty " .. defaultPartyName .. " partyId: " .. tostring(partyId))
         tableHelper.print(PartySystem.data.parties)
         tes3mp.SendMessage(pid, color.Default .. "Party has been created.\n", false)
-        local eventStatus = customEventHooks.triggerValidators("OnPartyCreated",{partyId,pid})
-        customEventHooks.triggerHandlers("OnPartyCreated",eventStatus,{partyId,pid})
+        local eventStatus = customEventHooks.triggerValidators("OnPartyCreated", {partyId, pid})
+        customEventHooks.triggerHandlers("OnPartyCreated", eventStatus, {partyId, pid})
         return partyId
     end
     return nil
@@ -109,7 +108,7 @@ function PartySystem.addMember(partyId, pid)
                 PartySystem.removeMember(otherPartyId, pid)
             end
             if PartySystem.config.allowNamedParties then
-                PartySystem.messageParty(partyId,color.Default .. tostring(name) .. " has joined " .. party.name .. ".")
+                PartySystem.messageParty(partyId, color.Default .. tostring(name) .. " has joined " .. party.name .. ".")
             else
                 PartySystem.messageParty(partyId, color.Default .. tostring(name) .. " has joined the party.")
             end
@@ -120,8 +119,8 @@ function PartySystem.addMember(partyId, pid)
             else
                 tes3mp.SendMessage(pid, color.Default .. "You've joined a party.\n", false)
             end
-            local eventStatus = customEventHooks.triggerValidators("OnPartyAddMember",{partyId,pid})
-            customEventHooks.triggerHandlers("OnPartyAddMember",eventStatus,{partyId,pid})
+            local eventStatus = customEventHooks.triggerValidators("OnPartyAddMember", {partyId, pid})
+            customEventHooks.triggerHandlers("OnPartyAddMember", eventStatus, {partyId, pid})
 
             return
         end
@@ -133,7 +132,7 @@ function PartySystem.isInvited(partyId, pid)
     pid = tonumber(pid)
     partyId = tonumber(partyId)
     if Players[pid] == nil or Players[pid]:IsLoggedIn() == false then
-        return false 
+        return false
     end
     local name = Players[pid].name
     local party = PartySystem.data.parties[partyId]
@@ -153,20 +152,21 @@ function PartySystem.inviteMember(partyId, pid, inviter)
             end
 
             if PartySystem.config.inviteTimeout ~= nil then
-                local timerId = tes3mp.CreateTimerEx("OnPartyInviteTimeExpiration", PartySystem.config.inviteTimeout, "ii",
-                                    partyId, pid)
+                local timerId = tes3mp.CreateTimerEx("OnPartyInviteTimeExpiration", PartySystem.config.inviteTimeout,
+                                    "ii", partyId, pid)
                 invites[partyId][name] = timerId
                 tes3mp.StartTimer(timerId)
             else
                 invites[partyId][name] = -1
             end
             if PartySystem.config.allowNamedParties then
-                tes3mp.SendMessage(pid, color.Default .. tostring(inviter) .. " wants you to join " .. party.name .. ".\n", false)
+                tes3mp.SendMessage(pid,
+                    color.Default .. tostring(inviter) .. " wants you to join " .. party.name .. ".\n", false)
             else
                 tes3mp.SendMessage(pid, color.Default .. tostring(inviter) .. " wants you to join their party.\n", false)
             end
-            local eventStatus = customEventHooks.triggerValidators("OnPartyInviteMember",{partyId,pid})
-            customEventHooks.triggerHandlers("OnPartyInviteMember",eventStatus,{partyId,pid})
+            local eventStatus = customEventHooks.triggerValidators("OnPartyInviteMember", {partyId, pid})
+            customEventHooks.triggerHandlers("OnPartyInviteMember", eventStatus, {partyId, pid})
             return
         end
         PartySystem.log("Attempt to invite " .. tostring(name) .. " to party " .. tostring(partyId) .. " failed")
@@ -175,8 +175,8 @@ end
 
 function OnPartyInviteTimeExpiration(partyId, pid)
     PartySystem.removeInvite(partyId, pid)
-    local eventStatus = customEventHooks.triggerValidators("OnPartyInviteTimeExpiration",{partyId,pid})
-    customEventHooks.triggerHandlers("OnPartyInviteTimeExpiration",eventStatus,{partyId,pid})
+    local eventStatus = customEventHooks.triggerValidators("OnPartyInviteTimeExpiration", {partyId, pid})
+    customEventHooks.triggerHandlers("OnPartyInviteTimeExpiration", eventStatus, {partyId, pid})
 end
 
 function PartySystem.removeInvite(partyId, pid)
@@ -186,12 +186,13 @@ function PartySystem.removeInvite(partyId, pid)
         local name = Players[pid].name
         local party = PartySystem.data.parties[partyId]
         if party ~= nil and PartySystem.isInvited(partyId, pid) then
-            local eventStatus = customEventHooks.triggerValidators("OnPartyUnInviteMember",{partyId,pid})
-            customEventHooks.triggerHandlers("OnPartyUnInviteMember",eventStatus,{partyId,pid})
+            local eventStatus = customEventHooks.triggerValidators("OnPartyUnInviteMember", {partyId, pid})
+            customEventHooks.triggerHandlers("OnPartyUnInviteMember", eventStatus, {partyId, pid})
             invites[partyId][name] = nil
             return
         end
-        PartySystem.log("Attempt to remove invite of " .. tostring(name) .. " from party " .. tostring(partyId) .. " failed")
+        PartySystem.log("Attempt to remove invite of " .. tostring(name) .. " from party " .. tostring(partyId) ..
+                            " failed")
     end
 end
 
@@ -207,8 +208,8 @@ function PartySystem.acceptInvite(partyId, pid)
         end
         invites[partyId][name] = nil
         PartySystem.addMember(partyId, pid)
-        local eventStatus = customEventHooks.triggerValidators("OnPartyAcceptInvite",{partyId,pid})
-        customEventHooks.triggerHandlers("OnPartyAcceptInvite",eventStatus,{partyId,pid})
+        local eventStatus = customEventHooks.triggerValidators("OnPartyAcceptInvite", {partyId, pid})
+        customEventHooks.triggerHandlers("OnPartyAcceptInvite", eventStatus, {partyId, pid})
         return
     end
     tes3mp.SendMessage(pid, color.Red .. "Unable to join party.\n", false)
@@ -237,13 +238,14 @@ function PartySystem.removeMember(partyId, pid)
 
                 if PartySystem.config.allowNamedParties then
                     tes3mp.SendMessage(pid, color.Default .. "You've been removed from " .. party.name .. ".\n", false)
-                    PartySystem.messageParty(partyId, color.Default .. tostring(name) .. " has left " .. party.name .. ".")
+                    PartySystem.messageParty(partyId,
+                        color.Default .. tostring(name) .. " has left " .. party.name .. ".")
                 else
                     tes3mp.SendMessage(pid, color.Default .. "You've been removed from the party.\n", false)
                     PartySystem.messageParty(partyId, color.Default .. tostring(name) .. " has left the party.")
                 end
-                local eventStatus = customEventHooks.triggerValidators("OnPartyRemoveMember",{partyId,pid})
-                customEventHooks.triggerHandlers("OnPartyRemoveMember",eventStatus,{partyId,pid})
+                local eventStatus = customEventHooks.triggerValidators("OnPartyRemoveMember", {partyId, pid})
+                customEventHooks.triggerHandlers("OnPartyRemoveMember", eventStatus, {partyId, pid})
                 if #party.members == 0 then
                     PartySystem.data.parties[partyId] = nil
                     invites[partyId] = nil
@@ -262,7 +264,7 @@ function PartySystem.getPartyId(pid)
         local name = Players[pid].name
         local partyId = getPlayerParty(name)
 
-        --tableHelper.print(PartySystem.data)
+        -- tableHelper.print(PartySystem.data)
         if partyId ~= nil and PartySystem.data.parties[partyId] ~= nil and
             tableHelper.containsValue(PartySystem.data.parties[partyId].members, name) then
             return partyId
@@ -281,13 +283,13 @@ function PartySystem.isPartyLeader(partyId, pid)
     return false
 end
 
-function PartySystem.changeLeader(partyId,name)
+function PartySystem.changeLeader(partyId, name)
     name = tostring(name)
     local party = PartySystem.data.parties[partyId]
     if party ~= nil then
         party.leader = name
-        local eventStatus = customEventHooks.triggerValidators("OnPartyLeaderChange",{partyId,name})
-        customEventHooks.triggerHandlers("OnPartyLeaderChange",eventStatus,{partyId,name})
+        local eventStatus = customEventHooks.triggerValidators("OnPartyLeaderChange", {partyId, name})
+        customEventHooks.triggerHandlers("OnPartyLeaderChange", eventStatus, {partyId, name})
     else
         PartySystem.log("Unable to change party leader of a non-existing party")
     end
@@ -320,18 +322,14 @@ function PartySystem.getMembers(partyId)
 end
 
 function PartySystem.isPartyDead(partyId)
-    local result = true
     for _, member in PartySystem.getMembers(partyId) do
         local player = logicHandler.GetPlayerByName(member)
-        if player and player:IsLoggedIn() then
-            local health = tes3mp.GetHealthCurrent(player.pid)
-            if health >= 1 then
-                result = false
-                break
-            end
+        local health = tes3mp.GetHealthCurrent(player.pid)
+        if health >= 1 then
+            return false
         end
     end
-    return result
+    return true
 end
 
 function PartySystem.OnServerPostInitHandler()
@@ -354,7 +352,7 @@ function PartySystem.OnServerPostInitHandler()
 end
 
 function PartySystem.OnServerExitHandler()
-    for _,party in pairs(PartySystem.data.parties) do
+    for _, party in pairs(PartySystem.data.parties) do
         if #party.members == 1 then
             setPlayerParty(party.members[1], nil)
             PartySystem.data.parties[party.id] = nil
@@ -368,11 +366,14 @@ function PartySystem.OnPlayerDeathHandler(eventStatus, pid)
         local partyId = PartySystem.getPartyId(pid)
         if partyId and PartySystem.isPartyDead(partyId) then
             local eventStatus = customEventHooks.triggerValidators("OnPartyDeath", {partyId})
+            if eventStatus.validDefaultHandler then
+                PartySystem.messageParty(partyId, color.Red .. "Everyone in the party has died!")
+            end
             customEventHooks.triggerHandlers("OnPartyDeath", eventStatus, {partyId})
+
         end
     end
 end
-
 
 customEventHooks.registerHandler("OnServerPostInit", PartySystem.OnServerPostInitHandler)
 customEventHooks.registerHandler("OnServerExit", PartySystem.OnServerExitHandler)
