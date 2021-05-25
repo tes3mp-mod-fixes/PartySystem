@@ -84,7 +84,15 @@ local function mainCommand(pid, cmd)
     elseif cmd[2] == "leave" or cmd[2] == "l" then
         leave(pid)
     else
-        -- TODO print list of commands and descriptions
+        tes3mp.SendMessage(pid, 
+            color.GreenText 
+            .. "/party create(or c) [party_name] - Create a party of [party_name].\n"
+            .. "/party invite(or i) [pid] - Invite a player with a player id of [pid].\n"
+            .. "/party accept(or a) [party_name] - Accept a party invite to a party named [party_name].\n"
+            .. "/party uninvite(or u) [pid] - Uninvite a player with a player id of [pid] from the party.\n"
+            .. "/party kick(or k) [pid] - Kick a player with a player id of [pid] from the party.\n"
+            .. "/party leave(or l) - Leave your current party.\n"
+        )
     end
 
 end
